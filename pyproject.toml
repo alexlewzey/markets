@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "markets"
+version = "0.1.0"
+description = ""
+authors = ["Alexander Lewzey <a.lewzey@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+kaleido = "0.2.1"
+pandas = "^2.2.2"
+plotly = "^5.21.0"
+matplotlib = "^3.8.4"
+scikit-learn = "^1.4.2"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.7.0"
+python-dotenv = "^1.0.1"
+ipykernel = "^6.29.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

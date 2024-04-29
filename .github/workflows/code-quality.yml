@@ -1,0 +1,39 @@
+name: Format code
+on:
+  push:
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev  # ALSA library headers
+    - name: Install poetry config
+      run: pip install poetry && poetry install --no-interaction --no-ansi
+    - name: Run pre-commit on all files
+      run: poetry run pre-commit run --all-files
+    - name: Check for changes
+      id: step1
+      run: |
+        if git diff --exit-code; then
+          echo "run_commit_changes=false" >> $GITHUB_OUTPUT
+          echo "No changes made by formatters. Skipping commit and push."
+        else
+          echo "run_commit_changes=true" >> $GITHUB_OUTPUT
+          echo "Changes made by formatters. Executing commit and push."
+        fi
+    - name: Commit changes
+      if: steps.step1.outputs.run_commit_changes == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Format code with black isort docformatter autoflake"
+        git push
