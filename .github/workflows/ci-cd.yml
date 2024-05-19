@@ -127,17 +127,27 @@ jobs:
           -var="erc_repository_name=${{ env.ECR_REPOSITORY_NAME }}" \
           -var="lambda_name=${{ env.LAMBDA_NAME }}"
 
-    - name: Set Outputs
-      id: set-outputs
-      run: |
-        echo "ecr_repository_name=${{ env.ECR_REPOSITORY_NAME }}" >> "$GITHUB_OUTPUT"
-        echo "lambda_name=${{ env.LAMBDA_NAME }}" >> $GITHUB_OUTPUT
+    outputs:
+      ecr_repository_name: ${{ env.ECR_REPOSITORY_NAME }}
+      lambda_name: ${{ env.LAMBDA_NAME }}
+
+    # - name: Set Outputs
+    #   id: set-outputs
+    #   run: |
+    #     echo "ecr_repository_name=${{ env.ECR_REPOSITORY_NAME }}" >> "$GITHUB_OUTPUT"
+    #     echo "lambda_name=${{ env.LAMBDA_NAME }}" >> $GITHUB_OUTPUT
 
   smoke-tests:
     runs-on: ubuntu-latest
     needs: build-deploy
 
     steps:
+
+    - name: Debug Outputs
+      run: |
+        echo "ECR Repository Name from Outputs: ${{ needs.build-deploy.outputs.ecr_repository_name }}"
+        echo "Lambda Name from Outputs: ${{ needs.build-deploy.outputs.lambda_name }}"
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
