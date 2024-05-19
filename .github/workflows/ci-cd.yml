@@ -89,15 +89,12 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        IMAGE_TAG=${{ github.sha }}
-        docker build --platform linux/amd64 -t ${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
-        echo $IMAGE_TAG > image_tag.txt
+        docker build --platform linux/amd64 -t ${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
 
     - name: Push Docker Image to ERC
       run: |
-        IMAGE_TAG=$(cat $image_tag.txt)
-        docker tag ${{ env.ECR_REPOSITORY }}:$IMAGE_TAG ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
-        docker push ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+        docker tag ${{ env.ECR_REPOSITORY }}:${{ github.sha }} ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+        docker push ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -131,4 +128,6 @@ jobs:
 
     - name: Terraform Apply
       working-directory: src/infrastructure
-      run: terraform apply -auto-approve
+      run: |
+        terraform apply -auto-approve \
+          -var="image_tag=${{ github.sha }}"
