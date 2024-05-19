@@ -92,6 +92,7 @@ repos:
     - --hook-config=--path-to-file=TF_README.md
     - --hook-config=--add-to-existing-file=true
     - --hook-config=--create-file-if-not-exist=true
+    exclude: aws-backend
   - id: terraform_tflint
   - id: terraform_trivy
     args:

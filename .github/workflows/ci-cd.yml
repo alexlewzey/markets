@@ -33,11 +33,11 @@ jobs:
       run: |
         curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
-    - name: Install trivy
-      run: |
-        wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
-        tar -xzf trivy_0.31.3_Linux-64bit.tar.gz
-        sudo mv trivy /usr/local/bin/
+    # - name: Install trivy
+    #   run: |
+    #     wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+    #     tar -xzf trivy_0.31.3_Linux-64bit.tar.gz
+    #     sudo mv trivy /usr/local/bin/
 
     - name: Set up Terraform
       uses: hashicorp/setup-terraform@v1
