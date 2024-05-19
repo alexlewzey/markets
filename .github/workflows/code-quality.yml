@@ -2,7 +2,9 @@ name: Format code
 
 on:
   workflow_dispatch:
-  # push:
+  push:
+    branches:
+      - 'feature/ci-cd'
 
 jobs:
   format:
