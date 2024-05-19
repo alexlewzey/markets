@@ -82,7 +82,9 @@ repos:
   hooks:
   - id: terraform_fmt
   - id: terraform_validate
-    args: [--args=-no-color]
+    args:
+    - --args=-no-color
+    - --hook-config=--retry-once-with-cleanup=true
     exclude: aws-backend
   - id: terraform_docs
   - id: terraform_tflint
