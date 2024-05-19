@@ -44,15 +44,6 @@ jobs:
       with:
         terraform_version: 1.4.2
 
-    # - name: Create backend.hcl
-    #   run: |
-    #     echo "bucket = \"${{ secrets.TF_BACKEND_BUCKET }}\"" > backend.hcl
-    #     echo "dynamodb_table = \"${{ secrets.TF_BACKEND_DYNAMODB_TABLE }}\"" >> backend.hcl
-
-    # - name: Terraform init
-    #   working-directory: src/infrastructure
-    #   run: terraform init -backend-config=../../backend.hcl
-
     - name: Terraform init
       working-directory: src/infrastructure
       run: terraform init -backend=false
