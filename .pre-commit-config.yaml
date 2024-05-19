@@ -1,4 +1,4 @@
-exclude: ^(\.devcontainer|prototyping)/
+exclude: ^(\.devcontainer)/
 repos:
 # general
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -25,16 +25,12 @@ repos:
   rev: v0.9.0.6
   hooks:
   - id: shellcheck
-# jupyter notebooks
-- repo: https://github.com/kynan/nbstripout
-  rev: 0.6.1
+- repo: https://github.com/syntaqx/git-hooks
+  rev: v0.0.18
   hooks:
-  - id: nbstripout
-- repo: https://github.com/nbQA-dev/nbQA
-  rev: 1.7.1
-  hooks:
-  - id: nbqa-pyupgrade
-    args: [--py310-plus]
+  - id: shfmt
+    args: [-w]
+  - id: shellcheck
 # python
 - repo: https://github.com/asottile/pyupgrade
   rev: v2.29.0
@@ -52,6 +48,7 @@ repos:
   - id: ruff
     types_or: [python, pyi, jupyter]
     args: [--fix]
+    exclude: ^prototyping/
   - id: ruff-format
     types_or: [python, pyi, jupyter]
 - repo: https://github.com/pycqa/isort
@@ -69,6 +66,30 @@ repos:
   hooks:
   - id: bandit
     args: [-lll]
+# jupyter notebooks
+- repo: https://github.com/kynan/nbstripout
+  rev: 0.6.1
+  hooks:
+  - id: nbstripout
+- repo: https://github.com/nbQA-dev/nbQA
+  rev: 1.7.1
+  hooks:
+  - id: nbqa-pyupgrade
+    args: [--py310-plus]
+# terraform
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.86.1
+  hooks:
+  - id: terraform_fmt
+  - id: terraform_validate
+    args: [--args=-no-color]
+    exclude: aws-backend
+  - id: terraform_docs
+  - id: terraform_tflint
+  - id: terraform_trivy
+    args:
+    - --args=--ignorefile=__GIT_WORKING_DIR__/.trivyignore
+
 # - repo: local
 #   hooks:
 #   - id: pytest-check

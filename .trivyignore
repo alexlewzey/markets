@@ -1,0 +1,7 @@
+# Ignore specific Terraform Trivy rules or vulnerabilities
+# Each line represents a rule or vulnerability ID to be ignored
+
+# Example vulnerabilities
+AVD-AWS-0025
+AVD-AWS-0089
+AVD-AWS-0033

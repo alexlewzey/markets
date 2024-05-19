@@ -1,21 +1,30 @@
+import json
 import os
 import smtplib
 from datetime import date, datetime
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 
+import boto3
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 from dotenv import load_dotenv
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
-from core import dir_data, dir_tmp
+pio.kaleido.scope.chromium_args += (
+    "--single-process",
+)  # required for lambda environment
 
-kwargs = {"width": 1200, "height": 300}
+dir_tmp = Path("/tmp")  # only writable lambda directory
+dir_tmp.mkdir(exist_ok=True)
+
+plot_kwargs = {"width": 1200, "height": 300}
 
 
 def normalise(ser: pd.Series) -> pd.Series:
@@ -46,7 +55,7 @@ def create_metrics(write_csv: bool = False) -> pd.DataFrame:
     url = f"https://query1.finance.yahoo.com/v7/finance/download/BTC-USD?period1={start}&period2={now}&interval=1d&events=history&includeAdjustedClose=true"
     df = pd.read_csv(url)
     if write_csv:
-        df.to_csv(dir_data / f"BTC-USD_{date.today()}.csv", index=False)
+        df.to_csv(dir_tmp / f"BTC-USD_{date.today()}.csv", index=False)
     df.columns = df.columns.str.lower()
     df["log_close"] = np.log(df["close"])
     df["iddf"] = range(df.shape[0])
@@ -61,7 +70,7 @@ def create_metrics(write_csv: bool = False) -> pd.DataFrame:
 
     model = LinearRegression()
     model.fit(df[columns], df["log_close"])
-    df["poly"] = model.predict(df_poly)
+    df["poly"] = model.predict(df[columns])
 
     years = range(2021, 2022)
     for y in years:
@@ -84,7 +93,7 @@ def create_metrics(write_csv: bool = False) -> pd.DataFrame:
 def create_figures(df: pd.DataFrame) -> list[tuple]:
     figures = []
     melt = df.melt("date", ["risk_cryptoverse", "risk_logpoly"])
-    fig = px.line(melt, "date", "value", color="variable", **kwargs)
+    fig = px.line(melt, "date", "value", color="variable", **plot_kwargs)
     for i in [0.4, 0.6, 0.2, 0.9]:
         fig.add_hline(i, line_dash="dash", line_color="black")
     fig = update_margin(fig)
@@ -97,7 +106,7 @@ def create_figures(df: pd.DataFrame) -> list[tuple]:
     )
 
     melt = df.melt("date", ["close"] + df.filter(regex="^sma").columns.tolist())
-    fig = px.line(melt, "date", "value", color="variable", **kwargs)
+    fig = px.line(melt, "date", "value", color="variable", **plot_kwargs)
     fig = update_margin(fig)
     figures.append(
         (
@@ -110,13 +119,13 @@ def create_figures(df: pd.DataFrame) -> list[tuple]:
     df["poly_upper"] = df["poly"] + 1.5
     df["poly_lower"] = df["poly"] - 1
     melt = df.melt("date", ["log_close", "poly", "poly_upper", "poly_lower"])
-    fig = px.line(melt, "date", "value", color="variable", **kwargs)
+    fig = px.line(melt, "date", "value", color="variable", **plot_kwargs)
     fig = update_margin(fig)
     figures.append(
         ("polynomial_fit", fig, "Timeseries of log close price with polynomial fit")
     )
 
-    fig = px.scatter(df, "date", "close", color="risk_logpoly", **kwargs)
+    fig = px.scatter(df, "date", "close", color="risk_logpoly", **plot_kwargs)
     fig = update_margin(fig)
     figures.append(
         ("colored_ts", fig, "Timeseries of close price colored by risk metric")
@@ -125,7 +134,7 @@ def create_figures(df: pd.DataFrame) -> list[tuple]:
 
 
 def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
-    email_address = os.getenv("GMAIL")
+    email_address = os.getenv("GMAIL_ADDRESS")
     message = MIMEMultipart("related")
     message["Subject"] = "Market report"
     message["From"] = email_address
@@ -158,11 +167,11 @@ def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
 
 
 def send_email(message: MIMEMultipart) -> None:
-    email_address = os.getenv("GMAIL")
-    password = os.getenv("PASSWORD")
+    email_address = os.getenv("GMAIL_ADDRESS")
+    password = os.getenv("GMAIL_PASSWORD")
     if (email_address is None) or (password is None):
         raise ValueError(
-            "GMAIL and PASSWORD environment variables and needed to send email."
+            "GMAIL_ADDRESS and GMAIL_PASSWORD environment variables and needed to send email."
         )
     try:
         server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
@@ -174,13 +183,48 @@ def send_email(message: MIMEMultipart) -> None:
         print(f"Failed to send email: {e}")
 
 
+def get_secrets(secret_id: str) -> dict | None:
+    try:
+        session = boto3.session.Session()
+        client = session.client(service_name="secretsmanager")
+        result = client.get_secret_value(SecretId=secret_id)
+        secrets = json.loads(result["SecretString"])
+        return secrets
+    except Exception as e:
+        print(f"Exception raised: {e}")
+        return None
+
+
+def setup_environment_variables() -> None:
+    secret_id = "gmail"
+    secrets = get_secrets(secret_id=secret_id)
+    if secrets:
+        print("Reading secrets from aws secrets manager")
+        for k, v in secrets.items():
+            os.environ[k] = v
+    else:
+        print("Reading secrets from local .env")
+        load_dotenv()
+
+
 def main() -> None:
-    load_dotenv()
+    setup_environment_variables()
     df = create_metrics()
     table = create_summary_table(df)
     figures = create_figures(df)
     message = create_message(figures, table)
     send_email(message)
+
+
+def handler(event, context):
+    try:
+        main()
+        return {"statusCode": 200, "body": "Email sent successfully!"}
+    except Exception as e:
+        return {
+            "statusCode": 400,
+            "body": f"Error: {e}",
+        }
 
 
 if __name__ == "__main__":
