@@ -30,7 +30,7 @@ init-terraform:
 	@source .env_tf && cd src/infrastructure/backend && \
 	terraform init && \
 	terraform apply -auto-approve
-	@cd src/infrastructure && terraform init -backend-config=../backend.hcl
+	@cd src/infrastructure && terraform init -backend-config=../../backend.hcl
 
 test:
 	@echo "Running tests"

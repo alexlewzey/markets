@@ -51,7 +51,7 @@ jobs:
 
     - name: Terraform init
       working-directory: src/infrastructure
-      run: terraform init -backend-config=../backend.hcl
+      run: terraform init -backend-config=../../backend.hcl
 
     - name: Terraform init (backend)
       working-directory: src/infrastructure/backend
