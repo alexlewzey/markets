@@ -1,4 +1,4 @@
-exclude: ^(\.devcontainer|\.github/workflows)/
+exclude: ^(\.devcontainer)/
 repos:
 # general
 - repo: https://github.com/pre-commit/pre-commit-hooks
