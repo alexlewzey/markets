@@ -146,7 +146,7 @@ jobs:
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
     - name: Verify ECR repository
-      run: aws ecr describe-repositories --repository-names ${{ needs.build-deploy.outputs.ecr_repository }}
+      run: aws ecr describe-repositories --repository-names ${{ needs.build-deploy.outputs.ecr_repository_name }}
 
     - name: Verify Lambda
       run: aws lambda get-function --function-name ${{ needs.build-deploy.outputs.lambda_name }}
