@@ -57,4 +57,5 @@ jobs:
         poetry run pre-commit run --all-files
 
     - name: Check for file changes
+      if: failure()
       run: git diff --exit-code || (echo "Files were modified by pre-commit hooks. Please commit these changes:" && git diff && exit 1)
