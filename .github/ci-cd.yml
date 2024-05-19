@@ -1,12 +1,12 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches:
-    - main
-  pull_request:
-    branches:
-    - main
+  # push:
+  #   branches:
+  #   - main
+  # pull_request:
+  #   branches:
+  #   - main
   workflow_dispatch:
 
 jobs:
@@ -21,6 +21,28 @@ jobs:
       with:
         python-version: 3.10
 
-    - name: Install Poetry
+    - name: Install poetry and dependencies
       run: |
-        curl -sSL https://install.python-poetry.org | python3 -
+        pip install poetry
+        poetry install --no-interaction --no-ansi
+
+    - name: Install terraform-docs
+      run: |
+        wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz
+        tar -xzf terraform-docs-v0.16.0-linux-amd64.tar.gz
+        sudo mv terraform-docs /usr/local/bin/
+
+    - name: Install tflint
+      run: |
+        curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+        sudo mv tflint /usr/local/bin/
+
+    - name: Install trivy
+      run: |
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+        tar -xzf trivy_0.31.3_Linux-64bit.tar.gz
+        sudo mv trivy /usr/local/bin/
+
+    - name: Run pre-commit
+      run: |
+        poetry run pre-commit run --all-files
