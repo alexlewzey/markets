@@ -1,6 +1,6 @@
 #!/bin/bash
 
-aws ecr describe-images --repository-name ecr-repository >/dev/null 2>&1
+aws ecr describe-images --repository-name "$1" >/dev/null 2>&1
 exit_code=$?
 
 if [[ $exit_code -ne 0 ]]; then

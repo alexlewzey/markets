@@ -22,13 +22,15 @@ provider "aws" {
 
 
 variable "erc_repository_name" {
-  type    = string
-  default = "ecr-repository"
+  type = string
+}
+
+variable "lambda_name" {
+  type = string
 }
 
 variable "image_tag" {
-  type    = string
-  default = "latest"
+  type = string
 }
 
 
@@ -51,7 +53,7 @@ output "repository_url" {
 
 
 resource "aws_lambda_function" "market_lambda" {
-  function_name = "market-lambda"
+  function_name = var.lambda_name
   package_type  = "Image"
   image_uri     = "${aws_ecr_repository.erc_repository.repository_url}:${var.image_tag}"
   role          = aws_iam_role.lambda_exec_role.arn
