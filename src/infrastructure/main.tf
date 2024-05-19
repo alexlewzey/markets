@@ -26,7 +26,7 @@ variable "erc_repository_name" {
   default = "ecr-repository"
 }
 
-variable "lambda_image_tag" {
+variable "image_tag" {
   type    = string
   default = "latest"
 }
@@ -53,7 +53,7 @@ output "repository_url" {
 resource "aws_lambda_function" "market_lambda" {
   function_name = "market-lambda"
   package_type  = "Image"
-  image_uri     = "${aws_ecr_repository.erc_repository.repository_url}:${var.lambda_image_tag}"
+  image_uri     = "${aws_ecr_repository.erc_repository.repository_url}:${var.image_tag}"
   role          = aws_iam_role.lambda_exec_role.arn
 
   timeout     = 120 # seconds

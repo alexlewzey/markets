@@ -36,7 +36,7 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_erc_repository_name"></a> [erc\_repository\_name](#input\_erc\_repository\_name) | n/a | `string` | `"ecr-repository"` | no |
-| <a name="input_lambda_image_tag"></a> [lambda\_image\_tag](#input\_lambda\_image\_tag) | n/a | `string` | `"latest"` | no |
+| <a name="input_image_tag"></a> [image\_tag](#input\_image\_tag) | n/a | `string` | `"latest"` | no |
 
 ## Outputs
 

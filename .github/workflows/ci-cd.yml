@@ -26,8 +26,9 @@ jobs:
     - name: Install terraform-docs
       run: |
         wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz
-        tar -xzf terraform-docs-v0.17.0-linux-amd64.tar.gz
-        sudo mv terraform-docs /usr/local/bin/
+        mkdir -p tmp
+        tar -xzf terraform-docs-v0.17.0-linux-amd64.tar.gz -C tmp
+        sudo mv tmp/terraform-docs /usr/local/bin/
 
     - name: Install tflint
       run: |
@@ -36,7 +37,6 @@ jobs:
     - name: Install trivy
       run: |
         wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
-        mkdir -p tmp
         tar -xzf trivy_0.31.3_Linux-64bit.tar.gz -C tmp
         sudo mv tmp/trivy /usr/local/bin/
 
@@ -57,6 +57,78 @@ jobs:
       run: |
         poetry run pre-commit run --all-files
 
-    - name: Check for file changes
+    - name: Show file changes if failure
       if: failure()
       run: git diff --exit-code || (echo "Files were modified by pre-commit hooks. Please commit these changes:" && git diff && exit 1)
+
+  build:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    env:
+      ECR_REPOSITORY: ecr-repository
+      LAMBDA_NAME: market-lambda
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build Docker Image
+      run: |
+        IMAGE_TAG=${{ github.sha }}
+        docker build --platform linux/amd64 -t ${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+        echo $IMAGE_TAG > image_tag.txt
+
+    - name: Push Docker Image to ERC
+      run: |
+        IMAGE_TAG=$(cat $image_tag.txt)
+        docker tag ${{ env.ECR_REPOSITORY }}:$IMAGE_TAG ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+        docker push ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      TF_IN_AUTOMATION: true
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.4.2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    - name: Create backend.hcl file
+      run: |
+        echo 'bucket = "${{ secrets.TF_BACKEND_BUCKET }}"' > backend.hcl
+        echo 'dynamodb_table = "${{ secrets.TF_BACKEND_DYNAMODB_TABLE }}"' >> backend.hcl
+
+    - name: Terraform init
+      working-directory: src/infrastructure
+      run: terraform init -backend-config=../../backend.hcl
+
+    - name: Terraform Apply
+      working-directory: src/infrastructure
+      run: terraform apply -auto-approve
