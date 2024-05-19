@@ -130,8 +130,8 @@ jobs:
     - name: Set Outputs
       id: set-outputs
       run: |
-        echo "::set-output name=ecr_repository_name::${{ env.ECR_REPOSITORY_NAME }}"
-        echo "::set-output name=lambda_name::${{ env.LAMBDA_NAME }}"
+        echo "ecr_repository_name=${{ env.ECR_REPOSITORY_NAME }}" >> "$GITHUB_OUTPUT"
+        echo "lambda_name=${{ env.LAMBDA_NAME }}" >> $GITHUB_OUTPUT
 
   smoke-tests:
     runs-on: ubuntu-latest
