@@ -34,7 +34,13 @@ init-terraform:
 
 test:
 	@echo "Running tests"
-	@pre-commit run --all-files
+	@poetry run pre-commit run --all-files
+
+test-integration:
+	@poetry run python -m pytest tests/test_app_integration.py
+
+test-deployment:
+	@poetry run python -m pytest tests/test_deployment.py
 
 build:
 	@echo "Building app"

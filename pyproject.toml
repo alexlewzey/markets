@@ -14,12 +14,43 @@ matplotlib = "^3.8.4"
 scikit-learn = "^1.4.2"
 python-dotenv = "^1.0.1"
 boto3 = "^1.34.98"
+bottleneck = "^1.3.6"
 
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.0"
 ipykernel = "^6.29.4"
+pytest = "^8.2.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:kaleido.scopes.base"
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+check_untyped_defs = true
+
+
+[tool.ruff]
+select = [
+    "A",  # Pyflakes: general checks
+    "B",  # pycodestyle: pycodestyle checks
+    "C",  # mccabe: complexity checks
+    # "D",  # pydocstyle: docstring style checks
+    "E",  # pycodestyle: pycodestyle errors
+    "F",  # pyflakes: unused imports, variables, etc.
+    "I",  # isort: import sorting
+    "N",  # pep8-naming: naming conventions
+    "S",  # bandit: security checks
+    "W",  # pycodestyle: pycodestyle warnings
+]
+ignore = [
+    "S101",  # Ignore use of assert detected
+    "S108", # ignore use of tmp
+]
+fix = true
