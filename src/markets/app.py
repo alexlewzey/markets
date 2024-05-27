@@ -1,7 +1,7 @@
 import json
 import os
 import smtplib
-from datetime import date, datetime
+from datetime import datetime
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -13,6 +13,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
+from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -21,10 +22,12 @@ pio.kaleido.scope.chromium_args += (
     "--single-process",
 )  # required for lambda environment
 
-dir_tmp = Path("/tmp")  # only writable lambda directory
+dir_tmp = Path("/tmp")  # only lambda directory with write permissions
 dir_tmp.mkdir(exist_ok=True)
 
 plot_kwargs = {"width": 1200, "height": 300}
+
+SECRET_ID = "gmail"  # noqa: S105
 
 
 def normalise(ser: pd.Series) -> pd.Series:
@@ -32,30 +35,21 @@ def normalise(ser: pd.Series) -> pd.Series:
 
 
 def update_margin(fig: go.Figure) -> go.Figure:
-    fig.update_layout(margin=dict(l=5, r=5, t=5, b=5))
+    fig.update_layout(margin={"l": 5, "r": 5, "t": 5, "b": 5})
     return fig
 
 
-def create_summary_table(df: pd.DataFrame) -> pd.DataFrame:
-    display_columns = ["close", "previous_high", "risk_cryptoverse", "risk_logpoly"]
-    indexes = (-np.array([1, 7, 30, 90, 180, 360])).tolist()
-    table = df[display_columns].iloc[indexes]
-    table["lag_days"] = indexes
-    for c in ["close", "previous_high"]:
-        table[c] = table[c].apply(lambda x: f"{x:,.0f}")
-    for c in ["risk_cryptoverse", "risk_logpoly"]:
-        table[c] = table[c].apply(lambda x: f"{x:.2f}")
-    table = table.set_index("lag_days")
-    return table
-
-
-def create_metrics(write_csv: bool = False) -> pd.DataFrame:
+def download_btc() -> pd.DataFrame:
+    print("Downloading btc")
     now = int(datetime.now().timestamp())
     start = int(now - (60 * 60 * 24 * 365 * 15))
     url = f"https://query1.finance.yahoo.com/v7/finance/download/BTC-USD?period1={start}&period2={now}&interval=1d&events=history&includeAdjustedClose=true"
     df = pd.read_csv(url)
-    if write_csv:
-        df.to_csv(dir_tmp / f"BTC-USD_{date.today()}.csv", index=False)
+    return df
+
+
+def create_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    print("Creating metrics")
     df.columns = df.columns.str.lower()
     df["log_close"] = np.log(df["close"])
     df["iddf"] = range(df.shape[0])
@@ -90,9 +84,10 @@ def create_metrics(write_csv: bool = False) -> pd.DataFrame:
     return df
 
 
-def create_figures(df: pd.DataFrame) -> list[tuple]:
+def create_figures(metrics: pd.DataFrame) -> list[tuple]:
+    print("Creating figures")
     figures = []
-    melt = df.melt("date", ["risk_cryptoverse", "risk_logpoly"])
+    melt = metrics.melt("date", ["risk_cryptoverse", "risk_logpoly"])
     fig = px.line(melt, "date", "value", color="variable", **plot_kwargs)
     for i in [0.4, 0.6, 0.2, 0.9]:
         fig.add_hline(i, line_dash="dash", line_color="black")
@@ -105,7 +100,9 @@ def create_figures(df: pd.DataFrame) -> list[tuple]:
         )
     )
 
-    melt = df.melt("date", ["close"] + df.filter(regex="^sma").columns.tolist())
+    melt = metrics.melt(
+        "date", ["close"] + metrics.filter(regex="^sma").columns.tolist()
+    )
     fig = px.line(melt, "date", "value", color="variable", **plot_kwargs)
     fig = update_margin(fig)
     figures.append(
@@ -116,16 +113,16 @@ def create_figures(df: pd.DataFrame) -> list[tuple]:
         )
     )
 
-    df["poly_upper"] = df["poly"] + 1.5
-    df["poly_lower"] = df["poly"] - 1
-    melt = df.melt("date", ["log_close", "poly", "poly_upper", "poly_lower"])
+    metrics["poly_upper"] = metrics["poly"] + 1.5
+    metrics["poly_lower"] = metrics["poly"] - 1
+    melt = metrics.melt("date", ["log_close", "poly", "poly_upper", "poly_lower"])
     fig = px.line(melt, "date", "value", color="variable", **plot_kwargs)
     fig = update_margin(fig)
     figures.append(
         ("polynomial_fit", fig, "Timeseries of log close price with polynomial fit")
     )
 
-    fig = px.scatter(df, "date", "close", color="risk_logpoly", **plot_kwargs)
+    fig = px.scatter(metrics, "date", "close", color="risk_logpoly", **plot_kwargs)
     fig = update_margin(fig)
     figures.append(
         ("colored_ts", fig, "Timeseries of close price colored by risk metric")
@@ -133,7 +130,22 @@ def create_figures(df: pd.DataFrame) -> list[tuple]:
     return figures
 
 
+def create_summary_table(df: pd.DataFrame) -> pd.DataFrame:
+    print("Creating summary table")
+    display_columns = ["close", "previous_high", "risk_cryptoverse", "risk_logpoly"]
+    indexes = (-np.array([1, 2, 3, 7, 30, 90, 180, 360])).tolist()
+    table = df[display_columns].iloc[indexes]
+    table["lag_days"] = indexes
+    for c in ["close", "previous_high"]:
+        table[c] = table[c].apply(lambda x: f"{x:,.0f}")
+    for c in ["risk_cryptoverse", "risk_logpoly"]:
+        table[c] = table[c].apply(lambda x: f"{x:.2f}")
+    table = table.set_index("lag_days")
+    return table
+
+
 def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
+    print("Creating message")
     email_address = os.getenv("GMAIL_ADDRESS")
     message = MIMEMultipart("related")
     message["Subject"] = "Market report"
@@ -141,7 +153,7 @@ def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
     message["To"] = email_address
 
     figures_html = ""
-    for name, fig, desc in figures:
+    for name, _, desc in figures:
         figures_html += f"""<p>{desc}</p>\n<img src="cid:{name}">\n"""
 
     html = f"""\
@@ -156,7 +168,7 @@ def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
     body = MIMEText(html, "html")
     message.attach(body)
 
-    for name, fig, desc in figures:
+    for name, fig, _ in figures:
         path = dir_tmp / f"{name}.png"
         fig.write_image(path)
         with path.open("rb") as f:
@@ -167,37 +179,45 @@ def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
 
 
 def send_email(message: MIMEMultipart) -> None:
+    print("Sending email")
     email_address = os.getenv("GMAIL_ADDRESS")
     password = os.getenv("GMAIL_PASSWORD")
     if (email_address is None) or (password is None):
         raise ValueError(
-            "GMAIL_ADDRESS and GMAIL_PASSWORD environment variables and needed to send email."
+            "GMAIL_ADDRESS and GMAIL_PASSWORD environment variables "
+            "and needed to send email."
         )
     try:
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-        server.login(email_address, password)
-        server.sendmail(email_address, email_address, message.as_string())
-        server.quit()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(user=email_address, password=password)
+            server.sendmail(email_address, email_address, message.as_string())
         print("Successfully sent email")
     except Exception as e:
         print(f"Failed to send email: {e}")
 
 
 def get_secrets(secret_id: str) -> dict | None:
+    print("Getting secrests")
     try:
         session = boto3.session.Session()
         client = session.client(service_name="secretsmanager")
         result = client.get_secret_value(SecretId=secret_id)
         secrets = json.loads(result["SecretString"])
         return secrets
-    except Exception as e:
-        print(f"Exception raised: {e}")
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
+        if error_code == "ResourceNotFoundException":
+            print(f"Secret `{secret_id}` not found: {error_code}")
+        else:
+            print(f"ClientError getting secret `{secret_id}`: {error_code}")
+        return None
+    except Exception:
+        print(f"Exception getting secret `{secret_id}`")
         return None
 
 
-def setup_environment_variables() -> None:
-    secret_id = "gmail"
-    secrets = get_secrets(secret_id=secret_id)
+def setup_envs() -> None:
+    secrets = get_secrets(secret_id=SECRET_ID)
     if secrets:
         print("Reading secrets from aws secrets manager")
         for k, v in secrets.items():
@@ -208,10 +228,11 @@ def setup_environment_variables() -> None:
 
 
 def main() -> None:
-    setup_environment_variables()
-    df = create_metrics()
-    table = create_summary_table(df)
-    figures = create_figures(df)
+    setup_envs()
+    df = download_btc()
+    metrics = create_metrics(df)
+    table = create_summary_table(metrics)
+    figures = create_figures(metrics)
     message = create_message(figures, table)
     send_email(message)
 

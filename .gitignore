@@ -1,8 +1,6 @@
-*.csv
 *.html
 *.png
 tmp
-data
 .DS_Store
 .ruff_cache
 .env_tf
