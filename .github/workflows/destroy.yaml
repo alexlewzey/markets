@@ -1,10 +1,10 @@
-name: Build and Deploy
+name: Destroy
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Which environment to deploy to:'
+        description: 'Which environment: '
         required: true
         type: choice
         options:
