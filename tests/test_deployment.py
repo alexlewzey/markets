@@ -56,3 +56,15 @@ def test_lambda_permission_exists():
         )
     except Exception as e:
         pytest.fail(f"lambda permission exception: {e}")
+
+
+def test_lambda_invoke():
+    try:
+        lambda_client = boto3.client("lambda")
+        response = lambda_client.invoke(
+            FunctionName=FUNCITON_NAME, InvocationType="RequestResponse", Payload="{}"
+        )
+    except Exception as e:
+        pytest.fail(f"Exception raised: {e}")
+    payload = response["Payload"].read().decode("utf-8")
+    assert response["StatusCode"] == 200, f"payload: {payload}"

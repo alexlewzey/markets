@@ -5,6 +5,7 @@ tmp
 .ruff_cache
 .env_tf
 backend.hcl
+prototyping/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

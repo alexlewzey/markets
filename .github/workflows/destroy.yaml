@@ -1,0 +1,48 @@
+name: Build and Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Which environment to deploy to:'
+        required: true
+        type: choice
+        options:
+        - staging
+        - prod
+        default: staging
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      ECR_REPOSITORY_NAME: markets-ecr-repository
+      TF_IN_AUTOMATION: true
+      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+      TF_WORKSPACE: markets-${{ github.event.inputs.environment }}
+      TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.4.2
+
+    - name: Terraform init
+      working-directory: src/infrastructure
+      run: |
+        terraform init -input=false
+        echo "Current workspace $(terraform workspace show)"
+      timeout-minutes: 5
+
+    - name: Terraform Destroy
+      working-directory: src/infrastructure
+      run: |
+        terraform destroy -auto-approve \
+          -var="erc_repository_name=${{ env.ECR_REPOSITORY_NAME }}"
