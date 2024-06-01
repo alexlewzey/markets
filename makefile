@@ -25,12 +25,7 @@ invoke-local:
 
 clean:
 	@echo "Cleaning local project directory"
-	@find . -type d \
-		\( -name '.venv' -o \
-		-name '.*_cache' -o \
-		-name '__pycache__' \) \
-		-exec rm -rf {} + \
-		2>/dev/null || true
+	@poetry run python utils/remove_ignored.py
 
 test:
 	@echo "Running tests"
@@ -63,4 +58,4 @@ destroy:
 
 
 project_to_text:
-	@python utils/project_to_text.py
+	@poetry run python utils/project_to_text.py
