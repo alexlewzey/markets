@@ -44,8 +44,10 @@ jobs:
       env:
         TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
       run: |
-        terraform init
-        terraform workspace select markets-${{ github.event.inputs.environment }}
+        set -x
+        terraform init -input=false
+        terraform workspace select markets-${{ github.event.inputs.environment }} -input=false
+      timeout-minutes: 5
 
 
     - name: Create ECR repository
