@@ -13,7 +13,7 @@ on:
         default: staging
 
 jobs:
-  build-deploy:
+  destroy:
     runs-on: ubuntu-latest
 
     env:

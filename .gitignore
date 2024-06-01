@@ -4,8 +4,9 @@ tmp
 .DS_Store
 .ruff_cache
 .env_tf
-backend.hcl
+
 prototyping/*
+!prototyping/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
