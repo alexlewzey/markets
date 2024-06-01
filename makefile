@@ -26,12 +26,6 @@ clean:
 		-exec rm -rf {} + \
 		2>/dev/null || true
 
-init-terraform:
-	@source .env_tf && cd src/infrastructure/backend && \
-	terraform init && \
-	terraform apply -auto-approve
-	@cd src/infrastructure && terraform init -backend-config=../../backend.hcl
-
 test:
 	@echo "Running tests"
 	@poetry run pre-commit run --all-files
@@ -44,6 +38,7 @@ test-deployment:
 
 build:
 	@echo "Building app"
+	@cd src/infrastructure && terraform init
 	@cd src/infrastructure && terraform apply -target=aws_ecr_repository.erc_repository -auto-approve
 	@aws ecr get-login-password | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
 	@docker build --platform linux/amd64 -t ecr-repository .
@@ -52,15 +47,13 @@ build:
 
 deploy:
 	@echo "Deploying app"
+	@cd src/infrastructure && terraform init
 	@cd src/infrastructure && terraform apply -auto-approve
 
 destroy:
 	@echo "Destroying app"
+	@cd src/infrastructure && terraform init
 	@cd src/infrastructure && terraform destroy -auto-approve
-
-test-deploy:
-	@echo "Testing infrastructure"
-	@bash ./tests/test_existance.sh
 
 
 echo-project:
