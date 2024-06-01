@@ -1,18 +1,19 @@
 terraform {
-  # Assumes s3 bucket and dynamo db table already exist, if they do not exist comment out
-  backend "s3" {
-    key     = "tf-infra/terraform.tfstate"
-    region  = "eu-west-2"
-    encrypt = true
-    # Other settings defined in a config file
-  }
+  required_version = ">= 1.4.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = ">= 4.0.0"
     }
   }
-  required_version = ">= 1.4.2"
+  cloud {
+    organization = "alexlewzey"
+
+    workspaces {
+      tags = ["markets"]
+    }
+  }
+
 }
 
 
@@ -22,11 +23,13 @@ provider "aws" {
 
 
 variable "erc_repository_name" {
-  type = string
+  type    = string
+  default = "markets-ecr-repository"
 }
 
 variable "lambda_name" {
-  type = string
+  type    = string
+  default = "markets-lambda"
 }
 
 variable "image_tag" {

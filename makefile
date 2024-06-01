@@ -56,9 +56,9 @@ deploy:
 
 destroy:
 	@echo "Destroying app"
-	@aws ecr list-images --repository-name ecr-repository --query 'imageIds[*]' --output json | jq -c '.[]' | while read -r image_id; do \
-	aws ecr batch-delete-image --repository-name ecr-repository --image-ids "$$image_id"; \
-	done
+	# @aws ecr list-images --repository-name ecr-repository --query 'imageIds[*]' --output json | jq -c '.[]' | while read -r image_id; do \
+	# 	aws ecr batch-delete-image --repository-name ecr-repository --image-ids "$$image_id"; \
+	# 	done
 	@cd src/infrastructure && terraform destroy -auto-approve
 
 test-deploy:
@@ -67,4 +67,5 @@ test-deploy:
 
 
 echo-project:
+	@mkdir -p tmp
 	@bash utils/echo_project.sh > tmp/project.txt

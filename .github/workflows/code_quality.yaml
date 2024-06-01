@@ -1,0 +1,73 @@
+name: Code Quality
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        poetry install --no-interaction --no-ansi
+        sudo apt-get install shfmt
+
+    - name: Install terraform-docs
+      run: |
+        wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz
+        mkdir -p tmp
+        tar -xzf terraform-docs-v0.17.0-linux-amd64.tar.gz -C tmp
+        sudo mv tmp/terraform-docs /usr/local/bin/
+
+    - name: Install tflint
+      run: |
+        curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+    - name: Install trivy
+      run: |
+        wget https://github.com/aquasecurity/trivy/releases/download/v0.31.3/trivy_0.31.3_Linux-64bit.tar.gz
+        tar -xzf trivy_0.31.3_Linux-64bit.tar.gz -C tmp
+        sudo mv tmp/trivy /usr/local/bin/
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.4.2
+
+    - name: Terraform init
+      working-directory: src/infrastructure
+      run: terraform init -backend=false
+
+    - name: Terraform init (backend)
+      working-directory: src/infrastructure/backend
+      run: terraform init
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    - name: Run pre-commit and unit tests
+      run: |
+        poetry run pre-commit run --all-files
+
+    - name: Run integraiton tests
+      run: |
+        poetry run python -m pytest tests/test_app_integration.py
+
+    - name: Show file changes if failure
+      if: failure()
+      run: git diff --exit-code || (echo "Files were modified by pre-commit hooks. Please commit these changes:" && git diff && exit 1)

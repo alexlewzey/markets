@@ -43,7 +43,11 @@ def download_btc() -> pd.DataFrame:
     print("Downloading btc")
     now = int(datetime.now().timestamp())
     start = int(now - (60 * 60 * 24 * 365 * 15))
-    url = f"https://query1.finance.yahoo.com/v7/finance/download/BTC-USD?period1={start}&period2={now}&interval=1d&events=history&includeAdjustedClose=true"
+    url = (
+        f"https://query1.finance.yahoo.com/v7/finance/download/BTC-USD?"
+        f"period1={start}&period2={now}&interval=1d&"
+        f"events=history&includeAdjustedClose=true"
+    )
     df = pd.read_csv(url)
     return df
 
