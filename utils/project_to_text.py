@@ -5,6 +5,8 @@ from pathlib import Path
 import pathspec
 
 root = Path(__file__).parent.parent.resolve()
+tmp = root / "tmp"
+tmp.mkdir(exist_ok=True)
 paths = [p for p in root.rglob("*") if p.is_file()]
 with (root / ".gitignore").open() as f:
     patterns = [
@@ -16,7 +18,7 @@ to_ignore = set(spec.match_files(relative_paths))
 result = [
     p
     for p in relative_paths
-    if (p not in to_ignore) and not re.search(r"^(\.git/|utils|data|poetry.lock)", p)
+    if (p not in to_ignore) and not re.search(r"^(\.git/|data|poetry.lock)", p)
 ]
 project_structure = "\n".join(result)
 output = f"""Project name
@@ -37,5 +39,5 @@ for path in result:
     output += f"{path}:\n"
     output += f"{content}\n\n"
 
-with (root / "tmp" / "project.txt").open("w") as f:
+with (tmp / "project.txt").open("w") as f:
     f.write(output)

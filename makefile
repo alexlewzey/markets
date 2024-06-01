@@ -3,6 +3,12 @@ install:
 	@poetry install
 	@poetry run pre-commit install
 
+setup-secrets:
+	@python utils/create_gmail_secrets.py gmail_address=$(gmail_address) \
+						gmail_password=$(gmail_password) \
+						aws_access_key_id=$(aws_access_key_id) \
+						aws_secret_access_key=$(aws_secret_access_key)
+
 run:
 	@echo "Running the application locally"
 	@poetry run python -m src.markets.app
@@ -30,9 +36,6 @@ test:
 	@echo "Running tests"
 	@poetry run pre-commit run --all-files
 
-test-integration:
-	@poetry run python -m pytest tests/test_app_integration.py
-
 test-deployment:
 	@poetry run python -m pytest tests/test_deployment.py
 
@@ -56,6 +59,5 @@ destroy:
 	@cd src/infrastructure && terraform destroy -auto-approve
 
 
-echo-project:
-	@mkdir -p tmp
-	@bash utils/echo_project.sh > tmp/project.txt
+project_to_text:
+	@python utils/project_to_text.py

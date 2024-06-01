@@ -1,4 +1,4 @@
-name: Code Quality
+name: Test
 
 on:
   workflow_dispatch:
