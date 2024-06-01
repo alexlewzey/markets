@@ -2,6 +2,15 @@ name: Build and Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Which environment to deploy to:'
+        required: true
+        type: choice
+        options:
+        - staging
+        - prod
+        default: staging
 
 jobs:
   build-deploy:
@@ -30,14 +39,14 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
-    - name: Create backend.hcl file
-      run: |
-        echo 'bucket = "${{ secrets.TF_BACKEND_BUCKET }}"' > backend.hcl
-        echo 'dynamodb_table = "${{ secrets.TF_BACKEND_DYNAMODB_TABLE }}"' >> backend.hcl
-
     - name: Terraform init
       working-directory: src/infrastructure
-      run: terraform init -backend-config=../../backend.hcl
+      env:
+        TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+      run: |
+        terraform init
+        terraform workspace select markets-${{ github.event.inputs.environment }}
+
 
     - name: Create ECR repository
       working-directory: src/infrastructure
