@@ -7,8 +7,6 @@ terraform {
     }
   }
   cloud {
-    organization = "alexlewzey"
-
     workspaces {
       tags = ["markets"]
     }
@@ -16,11 +14,9 @@ terraform {
 
 }
 
-
 provider "aws" {
   region = "eu-west-2"
 }
-
 
 variable "erc_repository_name" {
   type    = string
@@ -38,7 +34,8 @@ variable "scheduler_name" {
 }
 
 variable "image_tag" {
-  type = string
+  type    = string
+  default = "null"
 }
 
 

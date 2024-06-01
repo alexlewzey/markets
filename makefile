@@ -56,10 +56,7 @@ deploy:
 
 destroy:
 	@echo "Destroying app"
-	# @aws ecr list-images --repository-name ecr-repository --query 'imageIds[*]' --output json | jq -c '.[]' | while read -r image_id; do \
-	# 	aws ecr batch-delete-image --repository-name ecr-repository --image-ids "$$image_id"; \
-	# 	done
-	@cd src/infrastructure && terraform destroy -auto-approve -var image_tag=""
+	@cd src/infrastructure && terraform destroy -auto-approve
 
 test-deploy:
 	@echo "Testing infrastructure"

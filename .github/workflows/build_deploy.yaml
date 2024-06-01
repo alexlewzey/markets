@@ -21,6 +21,7 @@ jobs:
       TF_IN_AUTOMATION: true
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
       TF_WORKSPACE: markets-${{ github.event.inputs.environment }}
+      TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -33,12 +34,21 @@ jobs:
       with:
         terraform_version: 1.4.2
 
-    - name: Configure AWS credentials
+    - name: Configure AWS credentials for staging
+      if: ${{ github.event.inputs.environment == 'staging' }}
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING }}
+        aws-region: eu-west-2
+
+    - name: Configure AWS credentials for prod
+      if: ${{ github.event.inputs.environment == 'prod' }}
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+        aws-region: eu-west-2
 
     - name: Terraform init
       working-directory: src/infrastructure
@@ -95,12 +105,21 @@ jobs:
         curl -sSL https://install.python-poetry.org | python3 -
         poetry install --no-interaction --no-ansi
 
-    - name: Configure AWS credentials
+    - name: Configure AWS credentials for staging
+      if: ${{ github.event.inputs.environment == 'staging' }}
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_STAGING }}
+        aws-region: eu-west-2
+
+    - name: Configure AWS credentials for prod
+      if: ${{ github.event.inputs.environment == 'prod' }}
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+        aws-region: eu-west-2
 
     - name: Run deployment tests
       run: |
