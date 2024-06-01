@@ -47,7 +47,8 @@ jobs:
       run: |
         set -x
         terraform init -input=false
-        terraform workspace select markets-${{ github.event.inputs.environment }} -input=false
+        echo "Current workspace $(terraform workspace show)"
+        # terraform workspace select markets-${{ github.event.inputs.environment }}
       timeout-minutes: 5
 
 
