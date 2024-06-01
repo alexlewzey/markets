@@ -1,3 +1,4 @@
+"""CLI tool to create the AWS secrets that are required for the app to run."""
 import argparse
 import json
 
