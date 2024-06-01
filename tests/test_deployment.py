@@ -3,9 +3,9 @@ import boto3
 import pytest
 from conftest import _test_aws_credentials
 
-REPOSITORY_NAME: str = "market-lambda-repository"
-FUNCITON_NAME: str = "market-lambda"
-SCHEDULE_NAME: str = "daily-lambda-trigger"
+REPOSITORY_NAME: str = "markets-ecr-repository"
+FUNCITON_NAME: str = "markets-lambda"
+SCHEDULE_NAME: str = "markets-scheduler"
 
 
 def test_aws_credentials():

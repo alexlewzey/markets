@@ -32,15 +32,21 @@ variable "lambda_name" {
   default = "markets-lambda"
 }
 
+variable "scheduler_name" {
+  type    = string
+  default = "markets-scheduler"
+}
+
 variable "image_tag" {
   type = string
 }
 
 
 resource "aws_ecr_repository" "erc_repository" {
-  name                 = var.erc_repository_name
-  image_tag_mutability = "IMMUTABLE"
+  name = var.erc_repository_name
 
+  image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
   image_scanning_configuration {
     scan_on_push = true
   }
@@ -127,7 +133,7 @@ resource "aws_iam_policy_attachment" "lambda_exec_role_policy_attach" {
 
 
 resource "aws_scheduler_schedule" "daily_lambda_trigger" {
-  name = "daily-lambda-trigger"
+  name = var.scheduler_name
   flexible_time_window {
     mode = "OFF"
   }

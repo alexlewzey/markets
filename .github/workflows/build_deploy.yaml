@@ -18,7 +18,6 @@ jobs:
 
     env:
       ECR_REPOSITORY_NAME: markets-ecr-repository
-      LAMBDA_NAME: markets-lambda
       TF_IN_AUTOMATION: true
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
       TF_WORKSPACE: markets-${{ github.event.inputs.environment }}
@@ -57,7 +56,6 @@ jobs:
           -target=aws_ecr_repository.erc_repository  \
           -var="image_tag=${{ github.sha }}" \
           -var="erc_repository_name=${{ env.ECR_REPOSITORY_NAME }}" \
-          -var="lambda_name=${{ env.LAMBDA_NAME }}"
 
     - name: Login to Amazon ECR
       id: login-ecr
@@ -78,7 +76,6 @@ jobs:
         terraform apply -auto-approve \
           -var="image_tag=${{ github.sha }}" \
           -var="erc_repository_name=${{ env.ECR_REPOSITORY_NAME }}" \
-          -var="lambda_name=${{ env.LAMBDA_NAME }}"
 
 
   test-deployment:

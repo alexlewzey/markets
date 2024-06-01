@@ -66,3 +66,39 @@ def _test_aws_credentials():
         pytest.fail(f"AWS credentials partially missing: {e}")
     except Exception as e:
         pytest.fail(f"AWS credentials exception: {e}")
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--repository_name",
+        action="store",
+        default="markets-ecr-repository",
+        help="repository_name",
+    )
+    parser.addoption(
+        "--funciton_name",
+        action="store",
+        default="markets-lambda",
+        help="funciton_name",
+    )
+    parser.addoption(
+        "--schedule_name",
+        action="store",
+        default="markets-scheduler",
+        help="schedule_name",
+    )
+
+
+@pytest.fixture
+def repository_name(request):
+    return request.config.getoption("--repository_name")
+
+
+@pytest.fixture
+def funciton_name(request):
+    return request.config.getoption("--funciton_name")
+
+
+@pytest.fixture
+def schedule_name(request):
+    return request.config.getoption("--schedule_name")
