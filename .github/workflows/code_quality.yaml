@@ -49,10 +49,6 @@ jobs:
       working-directory: src/infrastructure
       run: terraform init -backend=false
 
-    - name: Terraform init (backend)
-      working-directory: src/infrastructure/backend
-      run: terraform init
-
     - name: Configure AWS credentials for staging
       if: ${{ github.ref != 'refs/heads/main' }}
       uses: aws-actions/configure-aws-credentials@v1
