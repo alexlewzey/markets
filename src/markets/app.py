@@ -6,6 +6,7 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
+from typing import Generator
 
 import boto3
 import numpy as np
@@ -28,6 +29,15 @@ dir_tmp = Path("/tmp")  # only lambda directory with write permissions
 dir_tmp.mkdir(exist_ok=True)
 
 plot_kwargs = {"width": 1200, "height": 300}
+
+
+def to_chunks(items: str, n: int) -> Generator[str, None, None]:
+    for i in range(0, len(items), n):
+        yield items[i : i + n]
+
+
+def format_id(account_id: str) -> str:
+    return "-".join(to_chunks(account_id, 4))
 
 
 def get_account_name() -> str:
@@ -158,7 +168,8 @@ def create_summary_table(df: pd.DataFrame) -> pd.DataFrame:
 
 def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
     print("Creating message")
-    account_name = f"Sent from: {get_account_name()}"
+    account_name = format_id(get_account_name())
+    account_name_msg = f"Sent from: {account_name}"
 
     email_address = os.getenv("GMAIL_ADDRESS")
     message = MIMEMultipart("related")
@@ -174,7 +185,7 @@ def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
     <html>
     <head></head>
     <body>
-        {account_name}
+        {account_name_msg}
         {table.to_html()}
         {figures_html}
     </body>
