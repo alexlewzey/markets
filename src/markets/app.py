@@ -30,6 +30,17 @@ plot_kwargs = {"width": 1200, "height": 300}
 SECRET_ID = "gmail"  # noqa: S105
 
 
+def get_account_name() -> str:
+    try:
+        account_id = boto3.client("sts").get_caller_identity().get("Account")
+        account_name = boto3.client("organizations").describe_account(
+            AccountId=account_id
+        )["Account"]["Name"]
+        return str(account_name)
+    except Exception:
+        return "Failed to load name"
+
+
 def normalise(ser: pd.Series) -> pd.Series:
     return (ser - ser.min()) / (ser.max() - ser.min())
 
@@ -150,6 +161,8 @@ def create_summary_table(df: pd.DataFrame) -> pd.DataFrame:
 
 def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
     print("Creating message")
+    account_name = f"Sent from: {get_account_name()}"
+
     email_address = os.getenv("GMAIL_ADDRESS")
     message = MIMEMultipart("related")
     message["Subject"] = "Market report"
@@ -160,10 +173,11 @@ def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
     for name, _, desc in figures:
         figures_html += f"""<p>{desc}</p>\n<img src="cid:{name}">\n"""
 
-    html = f"""\
+    html = f"""
     <html>
     <head></head>
     <body>
+        {account_name}
         {table.to_html()}
         {figures_html}
     </body>
