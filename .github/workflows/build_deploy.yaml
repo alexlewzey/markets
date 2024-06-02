@@ -20,7 +20,7 @@ jobs:
       ECR_REPOSITORY_NAME: markets-ecr-repository
       TF_IN_AUTOMATION: true
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
-      ENVIRONMENT: "${{ github.event_name == 'push' && github.ref == 'refs/heads/main' ? 'prod' : github.event.inputs.environment }}"
+      ENVIRONMENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'prod' || github.event.inputs.environment }}
       TF_WORKSPACE: markets-${{ env.ENVIRONMENT }}
       TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
     steps:
