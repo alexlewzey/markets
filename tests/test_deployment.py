@@ -3,9 +3,7 @@ import boto3
 import pytest
 from conftest import _test_aws_credentials
 
-REPOSITORY_NAME: str = "markets-ecr-repository"
-FUNCITON_NAME: str = "markets-lambda"
-SCHEDULE_NAME: str = "markets-scheduler"
+from src.markets.core import FUNCITON_NAME, REPOSITORY_NAME, SCHEDULE_NAME
 
 
 def test_aws_credentials():
