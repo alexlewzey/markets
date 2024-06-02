@@ -8,6 +8,8 @@ import pandas as pd
 import pytest
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
+from src.markets.core import REGION_NAME
+
 EXAMPLE_EMAIL = "example@gmail.com"
 EXAMPLE_PASSWORD = "example_password"  # noqa: S105
 
@@ -59,7 +61,7 @@ def mock_df():
 
 def _test_aws_credentials():
     try:
-        boto3.client("lambda").list_functions()
+        boto3.client("lambda", region_name=REGION_NAME).list_functions()
     except NoCredentialsError as e:
         pytest.fail(f"AWS credentials missing: {e}")
     except PartialCredentialsError as e:
