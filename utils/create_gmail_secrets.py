@@ -7,17 +7,17 @@ from botocore.exceptions import ClientError
 
 
 def create_secret(
-    gmail_address,
-    gmail_password,
-    aws_access_key_id,
-    aws_secret_access_key,
-    region_name="us-west-2",
-):
+    gmail_address: str,
+    gmail_password: str,
+    aws_access_key_id: str,
+    aws_secret_access_key: str,
+    region_name: str | None = None,
+) -> dict | None:
     client = boto3.client(
         "secretsmanager",
-        region_name=region_name,
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
+        region_name=region_name,
     )
 
     secret_value = {"GMAIL_ADDRESS": gmail_address, "GMAIL_PASSWORD": gmail_password}
@@ -32,7 +32,7 @@ def create_secret(
         return None
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Create an AWS Secrets Manager secret for Gmail credentials."
     )
@@ -40,15 +40,16 @@ def main():
     parser.add_argument("gmail_password", help="The Gmail password")
     parser.add_argument("aws_access_key_id", help="The AWS access key ID")
     parser.add_argument("aws_secret_access_key", help="The AWS secret access key")
+    parser.add_argument("region_name", help="The AWS region")
 
     args = parser.parse_args()
 
     response = create_secret(
-        args.gmail_address,
-        args.gmail_password,
-        args.aws_access_key_id,
-        args.aws_secret_access_key,
-        region_name="eu-west-2",
+        gmail_address=args.gmail_address,
+        gmail_password=args.gmail_password,
+        aws_access_key_id=args.aws_access_key_id,
+        aws_secret_access_key=args.aws_secret_access_key,
+        region_name=args.region_name,
     )
     if response:
         print("Secret created successfully")
