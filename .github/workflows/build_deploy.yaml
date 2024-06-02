@@ -20,7 +20,8 @@ jobs:
       ECR_REPOSITORY_NAME: markets-ecr-repository
       TF_IN_AUTOMATION: true
       TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
-      TF_WORKSPACE: markets-${{ github.event.inputs.environment }}
+      ENVIRONMENT: "${{ github.event_name == 'push' && github.ref == 'refs/heads/main' ? 'prod' : github.event.inputs.environment }}"
+      TF_WORKSPACE: markets-${{ env.ENVIRONMENT }}
       TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
     steps:
     - name: Checkout code
@@ -34,8 +35,11 @@ jobs:
       with:
         terraform_version: 1.4.2
 
+    - name: Log environment
+      run: echo "Deploying to ${{ env.ENVIRONMENT }}"
+
     - name: Configure AWS credentials for staging
-      if: ${{ github.event.inputs.environment == 'staging' }}
+      if: ${{ env.ENVIRONMENT == 'staging' }}
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING }}
@@ -43,7 +47,7 @@ jobs:
         aws-region: eu-west-2
 
     - name: Configure AWS credentials for prod
-      if: ${{ github.event.inputs.environment == 'prod' }}
+      if: ${{ env.ENVIRONMENT == 'prod' }}
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
@@ -105,7 +109,7 @@ jobs:
         poetry install --no-interaction --no-ansi
 
     - name: Configure AWS credentials for staging
-      if: ${{ github.event.inputs.environment == 'staging' }}
+      if: ${{ env.ENVIRONMENT == 'staging' }}
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_STAGING }}
@@ -113,7 +117,7 @@ jobs:
         aws-region: eu-west-2
 
     - name: Configure AWS credentials for prod
-      if: ${{ github.event.inputs.environment == 'prod' }}
+      if: ${{ env.ENVIRONMENT == 'prod' }}
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
