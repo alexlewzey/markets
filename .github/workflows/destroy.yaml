@@ -11,17 +11,21 @@ on:
         - staging
         - prod
         default: staging
+  push:
+    branches:
+    - main
+
+env:
+  ECR_REPOSITORY_NAME: markets-ecr-repository
+  TF_IN_AUTOMATION: true
+  TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+  TF_WORKSPACE: markets-${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'staging' || github.event.inputs.environment }}
+  TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
 
 jobs:
   destroy:
     runs-on: ubuntu-latest
 
-    env:
-      ECR_REPOSITORY_NAME: markets-ecr-repository
-      TF_IN_AUTOMATION: true
-      TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
-      TF_WORKSPACE: markets-${{ github.event.inputs.environment }}
-      TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
