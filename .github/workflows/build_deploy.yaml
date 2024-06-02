@@ -11,6 +11,9 @@ on:
         - staging
         - prod
         default: staging
+  push:
+    branches:
+    - main
 
 
 env:
