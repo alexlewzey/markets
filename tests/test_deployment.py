@@ -3,7 +3,7 @@ import boto3
 import pytest
 from conftest import _test_aws_credentials
 
-from src.core import FUNCITON_NAME, REGION_NAME, REPOSITORY_NAME, SCHEDULE_NAME
+from src.markets.core import FUNCITON_NAME, REGION_NAME, REPOSITORY_NAME, SCHEDULE_NAME
 
 
 def test_aws_credentials():
