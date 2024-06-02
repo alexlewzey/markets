@@ -3,9 +3,7 @@ import boto3
 import pytest
 from conftest import _test_aws_credentials
 
-REPOSITORY_NAME: str = "markets-ecr-repository"
-FUNCITON_NAME: str = "markets-lambda"
-SCHEDULE_NAME: str = "markets-scheduler"
+from src.core import FUNCITON_NAME, REGION_NAME, REPOSITORY_NAME, SCHEDULE_NAME
 
 
 def test_aws_credentials():
@@ -13,7 +11,7 @@ def test_aws_credentials():
 
 
 def test_ecr_repository_exists():
-    ecr_client = boto3.client("ecr")
+    ecr_client = boto3.client("ecr", region_name=REGION_NAME)
     try:
         response = ecr_client.describe_repositories(repositoryNames=[REPOSITORY_NAME])
         assert response["repositories"][0]["repositoryName"] == REPOSITORY_NAME
@@ -24,7 +22,7 @@ def test_ecr_repository_exists():
 
 
 def test_lambda_function_exists():
-    lambda_client = boto3.client("lambda")
+    lambda_client = boto3.client("lambda", region_name=REGION_NAME)
     try:
         res = lambda_client.get_function(FunctionName=FUNCITON_NAME)
         assert res["Configuration"]["FunctionName"] == FUNCITON_NAME
@@ -35,7 +33,7 @@ def test_lambda_function_exists():
 
 
 def test_schedule_exists():
-    scheduler_client = boto3.client("scheduler")
+    scheduler_client = boto3.client("scheduler", region_name=REGION_NAME)
     try:
         res = scheduler_client.get_schedule(Name=SCHEDULE_NAME)
         assert res["Name"] == SCHEDULE_NAME
@@ -47,7 +45,7 @@ def test_schedule_exists():
 
 def test_lambda_permission_exists():
     try:
-        lambda_client = boto3.client("lambda")
+        lambda_client = boto3.client("lambda", region_name=REGION_NAME)
         policy = lambda_client.get_policy(FunctionName=FUNCITON_NAME)["Policy"]
         assert "scheduler.amazonaws.com" in policy
     except lambda_client.exceptions.ResourceNotFoundException:
@@ -60,7 +58,7 @@ def test_lambda_permission_exists():
 
 def test_lambda_invoke():
     try:
-        lambda_client = boto3.client("lambda")
+        lambda_client = boto3.client("lambda", region_name=REGION_NAME)
         response = lambda_client.invoke(
             FunctionName=FUNCITON_NAME, InvocationType="RequestResponse", Payload="{}"
         )

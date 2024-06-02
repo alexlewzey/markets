@@ -18,6 +18,8 @@ from dotenv import load_dotenv
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
+from .core import REGION_NAME, SECRET_ID
+
 pio.kaleido.scope.chromium_args += (
     "--single-process",
 )  # required for lambda environment
@@ -27,15 +29,17 @@ dir_tmp.mkdir(exist_ok=True)
 
 plot_kwargs = {"width": 1200, "height": 300}
 
-SECRET_ID = "gmail"  # noqa: S105
-
 
 def get_account_name() -> str:
     try:
-        account_id = boto3.client("sts").get_caller_identity().get("Account")
-        account_name = boto3.client("organizations").describe_account(
-            AccountId=account_id
-        )["Account"]["Name"]
+        account_id = (
+            boto3.client("sts", region_name=REGION_NAME)
+            .get_caller_identity()
+            .get("Account")
+        )
+        account_name = boto3.client(
+            "organizations", region_name=REGION_NAME
+        ).describe_account(AccountId=account_id)["Account"]["Name"]
         return str(account_name)
     except Exception:
         return "Failed to load name"
