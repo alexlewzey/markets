@@ -92,6 +92,6 @@ repos:
   hooks:
   - id: test-app-unit
     name: test-app-unit
-    entry: poetry run python -m pytest tests/test_app_unit.py
+    entry: python -m pytest tests/test_app_unit.py
     language: system
     pass_filenames: false

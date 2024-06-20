@@ -15,7 +15,7 @@ run:
 
 build-local:
 	@echo "Building Docker image and running container"
-	@docker pull public.ecr.aws/lambda/python:3.10
+	@docker pull public.ecr.aws/lambda/python:3.12
 	@docker image build --platform linux/amd64 -t lambda .
 	@docker container run --env-file .env -p 9000:8080 lambda
 
