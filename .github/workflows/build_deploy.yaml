@@ -14,6 +14,9 @@ on:
   pull_request:
     branches:
     - main
+  push:
+    branches:
+    - main
 
 
 env:
@@ -186,7 +189,7 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
         poetry config virtualenvs.create false
-        poetry install --no-interaction --no-ansi
+        poetry install --no-interaction --no-ansi --no-root
 
     - name: Configure AWS credentials for staging
       if: ${{ env.ENVIRONMENT == 'staging' }}
