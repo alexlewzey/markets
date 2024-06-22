@@ -21,7 +21,8 @@
 				"ms-vscode.remote-repositories", // Remote Repositories
 				"ms-vscode-remote.remote-wsl", // WSL
 				"vscode-icons-team.vscode-icons", // vscode-icons
-				"charliermarsh.ruff" // Ruff
+				"charliermarsh.ruff", // Ruff
+				"ms-toolsai.jupyter" // Jupyter
 			]
 		}
 	},
