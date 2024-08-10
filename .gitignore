@@ -1,5 +1,4 @@
 *.html
-*.png
 tmp
 .DS_Store
 .ruff_cache
