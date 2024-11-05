@@ -1,7 +1,7 @@
 import json
+import logging
 import os
 import smtplib
-from datetime import datetime
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -14,12 +14,16 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
+import yfinance as yf
 from botocore.exceptions import ClientError
 from dotenv import load_dotenv
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
 from .core import SECRET_ID
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 pio.kaleido.scope.chromium_args += (
     "--single-process",
@@ -58,20 +62,15 @@ def update_margin(fig: go.Figure) -> go.Figure:
 
 
 def download_btc() -> pd.DataFrame:
-    print("Downloading btc")
-    now = int(datetime.now().timestamp())
-    start = int(now - (60 * 60 * 24 * 365 * 15))
-    url = (
-        f"https://query1.finance.yahoo.com/v7/finance/download/BTC-USD?"
-        f"period1={start}&period2={now}&interval=1d&"
-        f"events=history&includeAdjustedClose=true"
-    )
-    df = pd.read_csv(url)
+    logger.info("Downloading btc")
+    df = yf.download("BTC-USD", start="2003-01-01", end=None, interval="1d")
+    df = df["Close"]["BTC-USD"].reset_index()
+    df.columns = ["date", "close"]
     return df
 
 
 def create_metrics(df: pd.DataFrame) -> pd.DataFrame:
-    print("Creating metrics")
+    logger.info("Creating metrics")
     df.columns = df.columns.str.lower()
     df["log_close"] = np.log(df["close"])
     df["iddf"] = range(df.shape[0])
@@ -107,7 +106,7 @@ def create_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_figures(metrics: pd.DataFrame) -> list[tuple]:
-    print("Creating figures")
+    logger.info("Creating figures")
     figures = []
     melt = metrics.melt("date", ["risk_cryptoverse", "risk_logpoly"])
     fig = px.line(melt, "date", "value", color="variable", **plot_kwargs)
@@ -153,7 +152,7 @@ def create_figures(metrics: pd.DataFrame) -> list[tuple]:
 
 
 def create_summary_table(df: pd.DataFrame) -> pd.DataFrame:
-    print("Creating summary table")
+    logger.info("Creating summary table")
     display_columns = ["close", "previous_high", "risk_cryptoverse", "risk_logpoly"]
     indexes = (-np.array([1, 2, 3, 7, 30, 90, 180, 360])).tolist()
     table = df[display_columns].iloc[indexes]
@@ -167,7 +166,7 @@ def create_summary_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
-    print("Creating message")
+    logger.info("Creating message")
     account_name = format_id(get_account_name())
     account_name_msg = f"Sent from: {account_name}"
 
@@ -205,7 +204,7 @@ def create_message(figures: list[tuple], table: pd.DataFrame) -> MIMEMultipart:
 
 
 def send_email(message: MIMEMultipart) -> None:
-    print("Sending email")
+    logger.info("Sending email")
     email_address = os.getenv("GMAIL_ADDRESS")
     password = os.getenv("GMAIL_PASSWORD")
     if (email_address is None) or (password is None):
@@ -217,13 +216,13 @@ def send_email(message: MIMEMultipart) -> None:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(user=email_address, password=password)
             server.sendmail(email_address, email_address, message.as_string())
-        print("Successfully sent email")
+        logger.info("Successfully sent email")
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        logger.info(f"Failed to send email: {e}")
 
 
 def get_secrets(secret_id: str) -> dict | None:
-    print("Getting secrests")
+    logger.info("Getting secrests")
     try:
         session = boto3.session.Session()
         client = session.client(service_name="secretsmanager")
@@ -233,23 +232,23 @@ def get_secrets(secret_id: str) -> dict | None:
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
         if error_code == "ResourceNotFoundException":
-            print(f"Secret `{secret_id}` not found: {error_code}")
+            logger.info(f"Secret `{secret_id}` not found: {error_code}")
         else:
-            print(f"ClientError getting secret `{secret_id}`: {error_code}")
+            logger.info(f"ClientError getting secret `{secret_id}`: {error_code}")
         return None
     except Exception:
-        print(f"Exception getting secret `{secret_id}`")
+        logger.info(f"Exception getting secret `{secret_id}`")
         return None
 
 
 def setup_envs() -> None:
     secrets = get_secrets(secret_id=SECRET_ID)
     if secrets:
-        print("Reading secrets from aws secrets manager")
+        logger.info("Reading secrets from aws secrets manager")
         for k, v in secrets.items():
             os.environ[k] = v
     else:
-        print("Reading secrets from local .env")
+        logger.info("Reading secrets from local .env")
         load_dotenv()
 
 

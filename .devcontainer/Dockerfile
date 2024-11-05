@@ -1,30 +1,21 @@
-FROM python:3.12-bullseye
+FROM python:3.13-bullseye
 
 WORKDIR /workspaces/setup
 
-# Install system packages
+
+# Install required packages
 RUN apt-get update && apt-get install -y \
     curl \
-    unzip \
-    gnupg \
-    software-properties-common
+    unzip
 
-# Download and install Terraform
-RUN wget -O- https://apt.releases.hashicorp.com/gpg | \
-    gpg --dearmor | \
-    tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
-RUN echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
-    https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
-    tee /etc/apt/sources.list.d/hashicorp.list
-RUN apt update && apt-get install terraform
+# Install Terraform
+RUN curl -fsSL https://releases.hashicorp.com/terraform/1.7.4/terraform_1.7.4_linux_amd64.zip -o terraform.zip \
+    && unzip terraform.zip \
+    && mv terraform /usr/local/bin/ \
+    && rm terraform.zip
 
 # Install python dependencies
-COPY .pre-commit-config.yaml pyproject.toml poetry.lock ./
-RUN pip install poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-root && \
-    git init . && \
-    pre-commit install --install-hooks
+RUN pip install poetry
 
 # Install terraform-docs
 RUN wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz && \

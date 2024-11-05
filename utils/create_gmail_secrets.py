@@ -1,9 +1,13 @@
 """CLI tool to create the AWS secrets that are required for the app to run."""
 import argparse
 import json
+import logging
 
 import boto3
 from botocore.exceptions import ClientError
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 def create_secret(
@@ -28,7 +32,7 @@ def create_secret(
         )
         return response
     except ClientError as e:
-        print(f"An error occurred: {e}")
+        logger.info(f"An error occurred: {e}")
         return None
 
 
@@ -52,10 +56,10 @@ def main() -> None:
         region_name=args.region_name,
     )
     if response:
-        print("Secret created successfully")
-        print(response)
+        logger.info("Secret created successfully")
+        logger.info(response)
     else:
-        print("Failed to create secret")
+        logger.info("Failed to create secret")
 
 
 if __name__ == "__main__":

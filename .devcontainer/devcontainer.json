@@ -23,19 +23,32 @@
 				"vscode-icons-team.vscode-icons", // vscode-icons
 				"charliermarsh.ruff", // Ruff
 				"ms-toolsai.jupyter" // Jupyter
-			]
+			],
+			"settings": {
+				"editor.rulers": [88, 120],
+				"python.defaultInterpreterPath": "${localWorkspaceFolder}/.venv/bin/python",
+				"python.terminal.activateEnvInCurrentTerminal": true,
+				"python.pythonPath": "${localWorkspaceFolder}/.venv/bin/python"
+			}
 		}
 	},
 
 	"mounts": [
 		"source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
-	]
-
+	],
+	"remoteEnv": {
+		"AWS_ACCESS_KEY_ID": "${localEnv:AWS_ACCESS_KEY_ID}",
+		"AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
+		"AWS_REGION": "${localEnv:AWS_REGION}",
+		"TF_CLOUD_ORGANIZATION": "${localEnv:TF_CLOUD_ORGANIZATION}",
+		"TF_TOKEN_app_terraform_io": "${localEnv:TF_TOKEN_app_terraform_io}"
+	},
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "pip3 install --user -r requirements.txt",
+	"postStartCommand": "git config --global --add safe.directory $(pwd) && poetry lock && poetry install && poetry run pre-commit install --install-hooks",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
