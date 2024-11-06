@@ -1,5 +1,4 @@
 """Integration tests for app that interact with external systems."""
-from datetime import date
 
 import pandas as pd
 import pytest
@@ -14,16 +13,11 @@ def test_download_btc():
     except Exception as e:
         pytest.fail(f"download_btc exception: {e}")
     assert isinstance(df, pd.DataFrame)
-    expected_columns = ["Date", "Open", "High", "Low", "Close", "Adj Close", "Volume"]
+    expected_columns = ["date", "close"]
     assert df.columns.tolist() == expected_columns
     expected_schema = {
-        "Date": "object",
-        "Open": "float64",
-        "High": "float64",
-        "Low": "float64",
-        "Close": "float64",
-        "Adj Close": "float64",
-        "Volume": "int64",
+        "date": "datetime64[ns, UTC]",
+        "close": "float64",
     }
     for column, dtype in expected_schema.items():
         assert df[column].dtype == dtype
@@ -32,11 +26,6 @@ def test_download_btc():
         assert (df[column] >= 0).all(), "Negative values detected"
 
     assert (df.isnull().mean() == 0).all(), "Null values detected"
-
-    try:
-        df["Date"].apply(date.fromisoformat)
-    except ValueError as e:
-        pytest.fail(f"Invalid dates detected: {e}")
 
 
 def test_aws_credentials():
